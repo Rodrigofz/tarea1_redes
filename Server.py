@@ -1,6 +1,13 @@
 import socket
 import sys
+import binascii
  
+def format_hex(hex):
+    """format_hex returns a pretty version of a hex string"""
+    octets = [hex[i:i+2] for i in range(0, len(hex), 2)]
+    pairs = [" ".join(octets[i:i+2]) for i in range(0, len(octets), 2)]
+    return "\n".join(pairs)
+
 def main(**options):
     puerto = options.get("puerto")
     resolver = options.get("resolver")
@@ -27,7 +34,8 @@ def main(**options):
         clientMsg = "Message from Client:{}".format(message)
         clientIP  = "Client IP Address:{}".format(address)
     
-        print(clientMsg)
+        print(binascii.hexlify(message[:12])) #Header
+        print()
         print(clientIP)
 
         # Sending a reply to client
