@@ -3,9 +3,10 @@ import sys
  
 def main(**options):
     puerto = options.get("puerto")
-    print(options.get("saludo"))
+    resolver = options.get("resolver")
+
     localIP     = "127.0.0.1"
-    localPort   = 20001
+    localPort   = int(puerto)
     bufferSize  = 1024
 
     msgFromServer       = "Hello UDP Client"
@@ -33,4 +34,4 @@ def main(**options):
         UDPServerSocket.sendto(bytesToSend, address)
 
 if __name__ == "__main__":
-    main(puerto=sys.argv[1], saludo="holi")
+    main(puerto=sys.argv[1], resolver=sys.argv[2])
