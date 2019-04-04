@@ -28,6 +28,14 @@ def reconstruct(arr):
     s = s[:-1]
     return s
 
+def bytesToArray(arr):
+    bits = []
+    for i in range(len(arr)):
+        #print(i, arr[i])
+        bits.append(arr[i])
+    return bits
+
+"""
 def valid_header(header):
     binary = bin(header)[2:]
     QR = binary[16]
@@ -36,7 +44,7 @@ def valid_header(header):
     RD = binary[24]
     QDCOUNT = binary[32:48]
     print(QR,Opcode, TC, RD, QDCOUNT)
-
+"""
 
 
 def find_zero(arr):
@@ -86,7 +94,8 @@ def main(**options):
     read_config()
     threading._start_new_thread(clean_cache_thread, ())
     puerto = options.get("puerto")
-    resolver = options.get("resolver")
+    ip_resolver = options.get("resolver")
+    
 
     localIP     = "127.0.0.1"
     localPort   = int(puerto)
@@ -110,31 +119,37 @@ def main(**options):
         clientMsg = "Message from Client:{}".format(message)
         clientIP  = "Client IP Address:{}".format(address)
     
-        #print(binascii.hexlify(message[:12])) #Header bin(message[:12])[2:]
-        #print(message)
-        bits = []
-        for i in range(len(message)):
-            print(i, message[i])
-            bits.append(message[i])
 
-        header = bits[:12]
+
+        #TRABAJO CON EL RESOLVER
+        # Create a datagram socket
+        resolver = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+        bytesToSend = message
+        resolver.sendto(bytesToSend, (ip_resolver,53))
+        msgFromResolver = resolver.recvfrom(bufferSize)
+        print("Resolver: ",bytesToArray(msgFromResolver[0]))
+        print()
+
+        message = bytesToArray(message)
+        print("Mensaje inicial:", message)
         
-        limit = find_zero(bits[12:])
+        header = message[:12]
+        
+        limit = find_zero(message[12:])
 
 
-        domain = bits[12:limit+12] #El numero del principio indica el largo de la primera expresion, 
+        domain = message[12:limit+12] #El numero del principio indica el largo de la primera expresion, 
         #luego de ese largo sigue un numero indicando el largo de la siguiente expresion y asi....
         domain = reconstruct(domain)
 
         #AAAA: 28
         #A: 1
         #MX: 15
-        tipo = bits[limit+13:limit+15]
+        tipo = message[limit+13:limit+15]
 
         print("Header:", header)
         print("Domain:", domain)
         print("Tipo:", tipo)
-        print(valid_header(header))
         """
         if tipo not in [1,15,28]:
             UDPServerSocket.sendto(str.encode("Mensaje en tipo raro, no le hacemos a eso"), address)
