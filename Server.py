@@ -3,7 +3,20 @@ import sys
 import binascii
 import datetime
 import json
- 
+import threading
+import time
+
+months = 0;
+days = 0; 
+hours = 0;
+minutes = 2;
+
+cache_lifetime = datetime.timedelta(
+    days=days + 30*months,
+    hours=hours,
+    minutes=minutes,
+)
+
 # Toma un arreglo y devuelve el string que lo creó
 def reconstruct(arr):
     i=0
@@ -38,8 +51,28 @@ def find_zero(arr):
         b = arr[i]
     return i
 
+def cache_clean():
+    with open('Cache.json') as cache:
+        data = json.load(cache)
+        to_delete = []
+        for tuple in data:
+            if datetime.datetime.strptime(data[tuple]['date'], '%Y-%m-%dT%H:%M:%S.%f') + cache_lifetime < datetime.datetime.now():
+                to_delete += [tuple]
+        
+        for key in to_delete:
+            del data[key]
+        
+    with open('Cache.json', 'w') as cache:
+        json.dump(data, cache, indent=4)
+
+def clean_cache_thread():
+    while(True):
+        cache_clean()
+        time.sleep(5)
+
 
 def main(**options):
+    threading._start_new_thread(clean_cache_thread, ())
     puerto = options.get("puerto")
     resolver = options.get("resolver")
 
@@ -76,8 +109,8 @@ def main(**options):
         
         limit = find_zero(bits[12:])
 
-        domain = bits[12:limit+12] #El numero del principio indica el largo de la primera expresion, 
-        #luego de ese largo sigue un numero indicando el largo de la siguiente expresion y asi....
+        domain = reconstruct(bits[12:limit+12]) 
+
 
         #AAAA: 28
         #A: 1
@@ -102,23 +135,24 @@ def main(**options):
             logs.close()
 
             #Cache
-            cache = open('Cache.json')
-            data = json.load(cache)
-            cache.close()
-            data[reconstruct(domain)] = {
-                'date': actual_date,
-                'response': 'Por ahora nadita jiji'
-            }
+            with open('Cache.json') as cache:
+                data = json.load(cache)
+                data[domain] = {
+                    'date': actual_date,
+                    'response': 'Por ahora nadita jiji'
+                }
+            cache_clean()
+
             with open('Cache.json', 'w') as cache:
                 json.dump(data, cache, indent=4)
 
 
-            print(reconstruct(domain)) #Reconstruye el dominio a caracteres entendibles
-            #print(message[:12].decode('utf8')) #Sitio
+            print(domain) 
             #print(clientIP)
 
             # Sending a reply to client
             UDPServerSocket.sendto(bytesToSend, address)
+
 
 if __name__ == "__main__":
     main(puerto=sys.argv[1], resolver=sys.argv[2])
