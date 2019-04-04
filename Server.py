@@ -3,17 +3,18 @@ import sys
 import binascii
 import datetime
 import json
+import threading
+import time
 
 months = 0;
 days = 0; 
 hours = 0;
-minutes = 0;
+minutes = 2;
 
 cache_lifetime = datetime.timedelta(
     days=days + 30*months,
     hours=hours,
     minutes=minutes,
-    seconds=10,
 )
 
 # Toma un arreglo y devuelve el string que lo creó
@@ -45,24 +46,23 @@ def cache_clean():
         data = json.load(cache)
         to_delete = []
         for tuple in data:
-            print(datetime.datetime.strptime(data[tuple]['date'], '%Y-%m-%dT%H:%M:%S.%f') + cache_lifetime < datetime.datetime.now())
             if datetime.datetime.strptime(data[tuple]['date'], '%Y-%m-%dT%H:%M:%S.%f') + cache_lifetime < datetime.datetime.now():
                 to_delete += [tuple]
         
         for key in to_delete:
             del data[key]
-            print(data)
-
         
     with open('Cache.json', 'w') as cache:
         json.dump(data, cache, indent=4)
-        
 
-
-
+def clean_cache_thread():
+    while(True):
+        cache_clean()
+        time.sleep(5)
 
 
 def main(**options):
+    threading._start_new_thread(clean_cache_thread, ())
     puerto = options.get("puerto")
     resolver = options.get("resolver")
 
