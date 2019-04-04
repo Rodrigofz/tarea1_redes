@@ -19,6 +19,16 @@ def reconstruct(arr):
     s = s[:-1]
     return s
 
+def valid_header(header):
+    binary = bin(header)[2:]
+    QR = binary[16]
+    Opcode = binary[17:21]
+    TC = binary[23]
+    RD = binary[24]
+    QDCOUNT = binary[32:48]
+    print(QR,Opcode, TC, RD, QDCOUNT)
+
+
 
 def find_zero(arr):
     b = -1
@@ -77,31 +87,38 @@ def main(**options):
         print("Header:", header)
         print("Domain:", domain)
         print("Tipo:", tipo)
+        print(valid_header(header))
+        if tipo not in [1,15,28]:
+            UDPServerSocket.sendto(str.encode("Mensaje en tipo raro, no le hacemos a eso"), address)
 
-        #Logs
-        logs = open('LOGS', 'a+')
-        actual_date = datetime.datetime.now().isoformat()
-        logs.write(actual_date + ', ' + clientIP + '\n')
-        logs.close()
+        elif not valid_header(header):
+            UDPServerSocket.sendto(str.encode("Header mal formateado uwu"), address)
 
-        #Cache
-        cache = open('Cache.json')
-        data = json.load(cache)
-        cache.close()
-        data[reconstruct(domain)] = {
-            'date': actual_date,
-            'response': 'Por ahora nadita jiji'
-        }
-        with open('Cache.json', 'w') as cache:
-            json.dump(data, cache, indent=4)
+        else:
+            #Logs
+            logs = open('LOGS', 'a+')
+            actual_date = datetime.datetime.now().isoformat()
+            logs.write(actual_date + ', ' + clientIP + '\n')
+            logs.close()
+
+            #Cache
+            cache = open('Cache.json')
+            data = json.load(cache)
+            cache.close()
+            data[reconstruct(domain)] = {
+                'date': actual_date,
+                'response': 'Por ahora nadita jiji'
+            }
+            with open('Cache.json', 'w') as cache:
+                json.dump(data, cache, indent=4)
 
 
-        print(reconstruct(domain)) #Reconstruye el dominio a caracteres entendibles
-        #print(message[:12].decode('utf8')) #Sitio
-        #print(clientIP)
+            print(reconstruct(domain)) #Reconstruye el dominio a caracteres entendibles
+            #print(message[:12].decode('utf8')) #Sitio
+            #print(clientIP)
 
-        # Sending a reply to client
-        UDPServerSocket.sendto(bytesToSend, address)
+            # Sending a reply to client
+            UDPServerSocket.sendto(bytesToSend, address)
 
 if __name__ == "__main__":
     main(puerto=sys.argv[1], resolver=sys.argv[2])
