@@ -1,6 +1,7 @@
 import socket
 import sys
 import binascii
+import datetime
  
 # Toma un arreglo y devuelve el string que lo creó
 def reconstruct(arr):
@@ -75,6 +76,12 @@ def main(**options):
         print("Header:", header)
         print("Domain:", domain)
         print("Tipo:", tipo)
+
+        logs = open('LOGS', 'a+')
+        actual_date = datetime.datetime.now().isoformat()
+        logs.write(actual_date + ', ' + clientIP + '\n')
+        logs.close()
+
         print(reconstruct(domain)) #Reconstruye el dominio a caracteres entendibles
         #print(message[:12].decode('utf8')) #Sitio
         #print(clientIP)
