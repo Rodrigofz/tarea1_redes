@@ -8,6 +8,14 @@ def format_hex(hex):
     pairs = [" ".join(octets[i:i+2]) for i in range(0, len(octets), 2)]
     return "\n".join(pairs)
 
+def find_zero(arr):
+    b = -1
+    i = 0
+    while(b!=0):
+        i=i+1
+        b = arr[i]
+    return i
+
 def main(**options):
     puerto = options.get("puerto")
     resolver = options.get("resolver")
@@ -34,9 +42,30 @@ def main(**options):
         clientMsg = "Message from Client:{}".format(message)
         clientIP  = "Client IP Address:{}".format(address)
     
-        print(binascii.hexlify(message[:12])) #Header
-        print()
-        print(clientIP)
+        #print(binascii.hexlify(message[:12])) #Header bin(message[:12])[2:]
+        #print(message)
+        bits = []
+        for i in range(len(message)):
+            print(i, message[i])
+            bits.append(message[i])
+
+        header = bits[:12]
+        
+        limit = find_zero(bits[12:])
+
+        domain = bits[12:limit+12] #El numero del principio indica el largo de la primera expresion, 
+        #luego de ese largo sigue un numero indicando el largo de la siguiente expresion y asi....
+
+        #AAAA: 28
+        #A: 1
+        #MX: 15
+        tipo = bits[limit+13:limit+15]
+
+        print("Header:", header)
+        print("Domain:", domain)
+        print("Tipo:", tipo)
+        #print(message[:12].decode('utf8')) #Sitio
+        #print(clientIP)
 
         # Sending a reply to client
         UDPServerSocket.sendto(bytesToSend, address)
