@@ -6,10 +6,11 @@ import json
 import threading
 import time
 
-months = 0;
+
+months = 12;
 days = 0; 
 hours = 0;
-minutes = 2;
+minutes = 0;
 
 cache_lifetime = datetime.timedelta(
     days=days + 30*months,
@@ -60,9 +61,19 @@ def clean_cache_thread():
         cache_clean()
         time.sleep(5)
 
+def read_config():
+    global months, days, hours, minutes
+    with open('Config.json') as config:
+        data = json.load(config)
+        months = data["cache_lifetime"]["months"]
+        days = data["cache_lifetime"]["days"]
+        hours = data["cache_lifetime"]["hours"]
+        minutes = data["cache_lifetime"]["minutes"]
+
 
 def main(**options):
     threading._start_new_thread(clean_cache_thread, ())
+    read_config()
     puerto = options.get("puerto")
     resolver = options.get("resolver")
 
@@ -101,7 +112,7 @@ def main(**options):
 
         domain = bits[12:limit+12] #El numero del principio indica el largo de la primera expresion, 
         #luego de ese largo sigue un numero indicando el largo de la siguiente expresion y asi....
-
+        domain = reconstruct(domain)
         #AAAA: 28
         #A: 1
         #MX: 15
@@ -120,18 +131,16 @@ def main(**options):
         #Cache
         with open('Cache.json') as cache:
             data = json.load(cache)
-            data[reconstruct(domain)] = {
+            data[domain] = {
                 'date': actual_date,
                 'response': 'Por ahora nadita jiji'
             }
 
-        cache_clean()
 
         with open('Cache.json', 'w') as cache:
             json.dump(data, cache, indent=4)
 
 
-        print(reconstruct(domain)) #Reconstruye el dominio a caracteres entendibles
         #print(message[:12].decode('utf8')) #Sitio
         #print(clientIP)
 
