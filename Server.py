@@ -12,11 +12,6 @@ days = 0;
 hours = 0;
 minutes = 0;
 
-cache_lifetime = datetime.timedelta(
-    days=days + 30*months,
-    hours=hours,
-    minutes=minutes,
-)
 
 # Toma un arreglo y devuelve el string que lo creó
 def reconstruct(arr):
@@ -62,7 +57,7 @@ def clean_cache_thread():
         time.sleep(5)
 
 def read_config():
-    global months, days, hours, minutes
+    global months, days, hours, minutes, cache_lifetime 
     with open('Config.json') as config:
         data = json.load(config)
         months = data["cache_lifetime"]["months"]
@@ -70,10 +65,16 @@ def read_config():
         hours = data["cache_lifetime"]["hours"]
         minutes = data["cache_lifetime"]["minutes"]
 
+    cache_lifetime = datetime.timedelta(
+    days=days + 30*months,
+    hours=hours,
+    minutes=minutes,
+)
+
 
 def main(**options):
-    threading._start_new_thread(clean_cache_thread, ())
     read_config()
+    threading._start_new_thread(clean_cache_thread, ())
     puerto = options.get("puerto")
     resolver = options.get("resolver")
 
