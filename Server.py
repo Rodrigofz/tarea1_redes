@@ -2,11 +2,21 @@ import socket
 import sys
 import binascii
  
-def format_hex(hex):
-    """format_hex returns a pretty version of a hex string"""
-    octets = [hex[i:i+2] for i in range(0, len(hex), 2)]
-    pairs = [" ".join(octets[i:i+2]) for i in range(0, len(octets), 2)]
-    return "\n".join(pairs)
+# Toma un arreglo y devuelve el string que lo creó
+def reconstruct(arr):
+    i=0
+    s=""
+    limit = 0
+    while(i<len(arr)):
+        limit = arr[i]
+        i = i+1 
+        for j in range(i,i+limit):
+            s = s + str(chr(arr[j]))
+        s = s + "."
+        i = i+limit
+    s = s[:-1]
+    return s
+
 
 def find_zero(arr):
     b = -1
@@ -15,6 +25,7 @@ def find_zero(arr):
         i=i+1
         b = arr[i]
     return i
+
 
 def main(**options):
     puerto = options.get("puerto")
@@ -64,6 +75,7 @@ def main(**options):
         print("Header:", header)
         print("Domain:", domain)
         print("Tipo:", tipo)
+        print(reconstruct(domain)) #Reconstruye el dominio a caracteres entendibles
         #print(message[:12].decode('utf8')) #Sitio
         #print(clientIP)
 
