@@ -6,10 +6,11 @@ import json
 import threading
 import time
 
-months = 0;
+
+months = 12;
 days = 0; 
 hours = 0;
-minutes = 2;
+minutes = 0;
 
 cache_lifetime = datetime.timedelta(
     days=days + 30*months,
@@ -70,9 +71,19 @@ def clean_cache_thread():
         cache_clean()
         time.sleep(5)
 
+def read_config():
+    global months, days, hours, minutes
+    with open('Config.json') as config:
+        data = json.load(config)
+        months = data["cache_lifetime"]["months"]
+        days = data["cache_lifetime"]["days"]
+        hours = data["cache_lifetime"]["hours"]
+        minutes = data["cache_lifetime"]["minutes"]
+
 
 def main(**options):
     threading._start_new_thread(clean_cache_thread, ())
+    read_config()
     puerto = options.get("puerto")
     resolver = options.get("resolver")
 
@@ -109,8 +120,10 @@ def main(**options):
         
         limit = find_zero(bits[12:])
 
-        domain = reconstruct(bits[12:limit+12]) 
 
+        domain = bits[12:limit+12] #El numero del principio indica el largo de la primera expresion, 
+        #luego de ese largo sigue un numero indicando el largo de la siguiente expresion y asi....
+        domain = reconstruct(domain)
 
         #AAAA: 28
         #A: 1
@@ -121,37 +134,39 @@ def main(**options):
         print("Domain:", domain)
         print("Tipo:", tipo)
         print(valid_header(header))
+        """
         if tipo not in [1,15,28]:
             UDPServerSocket.sendto(str.encode("Mensaje en tipo raro, no le hacemos a eso"), address)
 
         elif not valid_header(header):
             UDPServerSocket.sendto(str.encode("Header mal formateado uwu"), address)
-
-        else:
-            #Logs
-            logs = open('LOGS', 'a+')
-            actual_date = datetime.datetime.now().isoformat()
-            logs.write(actual_date + ', ' + clientIP + '\n')
-            logs.close()
-
-            #Cache
-            with open('Cache.json') as cache:
-                data = json.load(cache)
-                data[domain] = {
-                    'date': actual_date,
-                    'response': 'Por ahora nadita jiji'
-                }
-            cache_clean()
-
-            with open('Cache.json', 'w') as cache:
-                json.dump(data, cache, indent=4)
+        """
 
 
-            print(domain) 
-            #print(clientIP)
+        #else:
+        #Logs
+        logs = open('LOGS', 'a+')
+        actual_date = datetime.datetime.now().isoformat()
+        logs.write(actual_date + ', ' + clientIP + '\n')
+        logs.close()
 
-            # Sending a reply to client
-            UDPServerSocket.sendto(bytesToSend, address)
+
+        #Cache
+        with open('Cache.json') as cache:
+            data = json.load(cache)
+            data[domain] = {
+                'date': actual_date,
+                'response': 'Por ahora nadita jiji'
+            }
+
+
+
+        print(domain) 
+        #print(clientIP)
+
+        # Sending a reply to client
+        UDPServerSocket.sendto(bytesToSend, address)
+
 
 
 if __name__ == "__main__":
