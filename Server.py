@@ -2,6 +2,7 @@ import socket
 import sys
 import binascii
 import datetime
+import json
  
 # Toma un arreglo y devuelve el string que lo creó
 def reconstruct(arr):
@@ -77,10 +78,23 @@ def main(**options):
         print("Domain:", domain)
         print("Tipo:", tipo)
 
+        #Logs
         logs = open('LOGS', 'a+')
         actual_date = datetime.datetime.now().isoformat()
         logs.write(actual_date + ', ' + clientIP + '\n')
         logs.close()
+
+        #Cache
+        cache = open('Cache.json')
+        data = json.load(cache)
+        cache.close()
+        data[reconstruct(domain)] = {
+            'date': actual_date,
+            'response': 'Por ahora nadita jiji'
+        }
+        with open('Cache.json', 'w') as cache:
+            json.dump(data, cache, indent=4)
+
 
         print(reconstruct(domain)) #Reconstruye el dominio a caracteres entendibles
         #print(message[:12].decode('utf8')) #Sitio
