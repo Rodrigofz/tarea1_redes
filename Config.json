@@ -1,0 +1,17 @@
+{
+    "cache_lifetime":{
+        "months" : 0,
+        "days" : 0,
+        "hours" : 0,
+        "minutes" : 1
+    },
+    "filter":{
+        "redirected":{
+            "www.google.cl":"www.duckduckgo.com"
+        },
+        "excluded":[
+            "www.porno.cl",
+            "www.sorry.cl/buscaMatis"
+        ]
+    }
+}
