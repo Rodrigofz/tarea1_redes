@@ -3,7 +3,19 @@ import sys
 import binascii
 import datetime
 import json
- 
+
+months = 0;
+days = 0; 
+hours = 0;
+minutes = 0;
+
+cache_lifetime = datetime.timedelta(
+    days=days + 30*months,
+    hours=hours,
+    minutes=minutes,
+    seconds=10,
+)
+
 # Toma un arreglo y devuelve el string que lo creó
 def reconstruct(arr):
     i=0
@@ -27,6 +39,27 @@ def find_zero(arr):
         i=i+1
         b = arr[i]
     return i
+
+def cache_clean():
+    with open('Cache.json') as cache:
+        data = json.load(cache)
+        to_delete = []
+        for tuple in data:
+            print(datetime.datetime.strptime(data[tuple]['date'], '%Y-%m-%dT%H:%M:%S.%f') + cache_lifetime < datetime.datetime.now())
+            if datetime.datetime.strptime(data[tuple]['date'], '%Y-%m-%dT%H:%M:%S.%f') + cache_lifetime < datetime.datetime.now():
+                to_delete += [tuple]
+        
+        for key in to_delete:
+            del data[key]
+            print(data)
+
+        
+    with open('Cache.json', 'w') as cache:
+        json.dump(data, cache, indent=4)
+        
+
+
+
 
 
 def main(**options):
@@ -85,13 +118,15 @@ def main(**options):
         logs.close()
 
         #Cache
-        cache = open('Cache.json')
-        data = json.load(cache)
-        cache.close()
-        data[reconstruct(domain)] = {
-            'date': actual_date,
-            'response': 'Por ahora nadita jiji'
-        }
+        with open('Cache.json') as cache:
+            data = json.load(cache)
+            data[reconstruct(domain)] = {
+                'date': actual_date,
+                'response': 'Por ahora nadita jiji'
+            }
+
+        cache_clean()
+
         with open('Cache.json', 'w') as cache:
             json.dump(data, cache, indent=4)
 
