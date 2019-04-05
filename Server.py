@@ -164,7 +164,7 @@ def main(**options):
             
 
         #Cache
-        cache = open('Cache.json', 'w+')
+        cache = open('Cache.json', 'r')
         data = json.load(cache)
 
         
@@ -172,7 +172,7 @@ def main(**options):
             UDPServerSocket.sendto(str.encode("Mensaje en tipo raro, no le hacemos a eso"), address)
 
         #Si tenemos cacheado ya ese dominio
-        elif True:
+        elif False:
             bytesToSend = str.encode(data[domain])
             UDPServerSocket.sendto(bytesToSend, address)
 
@@ -186,10 +186,15 @@ def main(**options):
             addToLogs(clientIP, ip_response)
             
             #Agregamos al cache
-            data[domain] = {
-                    'date': actual_date,
-                    'response': ip_response,
-                }
+            with open('Cache.json') as cache:
+                data = json.load(cache)
+                data[domain] = {
+                        'date': actual_date,
+                        'response': ip_response,
+                    }
+
+            with open('Cache.json', 'w') as cache:
+                json.dump(data, cache, indent=4)
         
             print(domain) 
 
