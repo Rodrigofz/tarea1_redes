@@ -35,6 +35,16 @@ def bytesToArray(arr):
         bits.append(arr[i])
     return bits
 
+def extractIP(arr):
+    start_index = 12+find_zero(arr[12:])+17
+    ip_array = arr[start_index:start_index+4]
+    s = ""
+    for p in ip_array:
+        s = s+str(p)+'.'
+    s = s[:-1]
+    return s
+
+
 """
 def valid_header(header):
     binary = bin(header)[2:]
@@ -102,8 +112,7 @@ def main(**options):
     bufferSize  = 1024
 
     msgFromServer       = "Hello UDP Client"
-    bytesToSend         = str.encode(msgFromServer)
-
+    
     # Create a datagram socket
     UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 
@@ -126,10 +135,13 @@ def main(**options):
         resolver = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         bytesToSend = message
         resolver.sendto(bytesToSend, (ip_resolver,53))
-        msgFromResolver = resolver.recvfrom(bufferSize)
-        print("Resolver: ",bytesToArray(msgFromResolver[0]))
-        print()
+        msgFromResolver = bytesToArray(resolver.recvfrom(bufferSize)[0])
 
+        print("Resolver: ",msgFromResolver)
+        print("IP:", extractIP(msgFromResolver))
+        ip_response = extractIP(msgFromResolver)
+
+        
         message = bytesToArray(message)
         print("Mensaje inicial:", message)
         
@@ -163,7 +175,7 @@ def main(**options):
         #Logs
         logs = open('LOGS', 'a+')
         actual_date = datetime.datetime.now().isoformat()
-        logs.write(actual_date + ', ' + clientIP + '\n')
+        logs.write(actual_date + ', ' + clientIP + ', ' + ip_response + '\n')
         logs.close()
 
 
@@ -172,7 +184,7 @@ def main(**options):
             data = json.load(cache)
             data[domain] = {
                 'date': actual_date,
-                'response': 'Por ahora nadita jiji'
+                'response': ip_response,
             }
 
 
