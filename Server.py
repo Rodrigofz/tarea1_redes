@@ -7,10 +7,21 @@ import threading
 import time
 
 
-months = 12;
+months = 0;
 days = 0; 
 hours = 0;
-minutes = 0;
+minutes = 1;
+
+def extractHeaderDomainOther(message):
+    message = bytesToArray(message)
+    end_of_string = find_zero(message[12:]) #encuentra indice donde termina la consulta
+        
+    header = message[:12]
+    domain = reconstruct(message[12:end_of_string+12])
+    tipo = message[end_of_string+14]
+    other = message[end_of_string+15:]
+
+    return header,domain,tipo,other
 
 
 # Toma un arreglo y devuelve el string que lo creó
@@ -43,6 +54,24 @@ def extractIP(arr):
         s = s+str(p)+'.'
     s = s[:-1]
     return s
+
+def sendToResolver(message, ip_resolver, port=53):
+    resolver = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+    bytesToSend = message
+    resolver.sendto(bytesToSend, (ip_resolver,port))
+    msgFromResolver = bytesToArray(resolver.recvfrom(bufferSize)[0])
+
+    print("Resolver: ",msgFromResolver)
+    print("IP:", extractIP(msgFromResolver))
+    ip_response = extractIP(msgFromResolver)
+
+    return ip_response, msgFromResolver
+
+def addToLogs(clientIP, ip_response):
+    logs = open('LOGS', 'a+')
+    actual_date = datetime.datetime.now().isoformat()
+    logs.write(actual_date + ', ' + clientIP + ', ' + ip_response + '\n')
+    logs.close()
 
 
 """
@@ -125,75 +154,47 @@ def main(**options):
         bytesAddressPair = UDPServerSocket.recvfrom(bufferSize)
         message = bytesAddressPair[0]
         address = bytesAddressPair[1]
-        clientMsg = "Message from Client:{}".format(message)
         clientIP  = "Client IP Address:{}".format(address)
-    
 
-
-        #TRABAJO CON EL RESOLVER
-        # Create a datagram socket
-        resolver = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-        bytesToSend = message
-        resolver.sendto(bytesToSend, (ip_resolver,53))
-        msgFromResolver = bytesToArray(resolver.recvfrom(bufferSize)[0])
-
-        print("Resolver: ",msgFromResolver)
-        print("IP:", extractIP(msgFromResolver))
-        ip_response = extractIP(msgFromResolver)
-
-        
-        message = bytesToArray(message)
-        print("Mensaje inicial:", message)
-        
-        header = message[:12]
-        
-        limit = find_zero(message[12:])
-
-
-        domain = message[12:limit+12] #El numero del principio indica el largo de la primera expresion, 
-        #luego de ese largo sigue un numero indicando el largo de la siguiente expresion y asi....
-        domain = reconstruct(domain)
-
-        #AAAA: 28
-        #A: 1
-        #MX: 15
-        tipo = message[limit+13:limit+15]
+        header, domain, tipo, _ = extractHeaderDomainOther(message)
 
         print("Header:", header)
         print("Domain:", domain)
         print("Tipo:", tipo)
-        """
+            
+
+        #Cache
+        cache = open('Cache.json', 'w+')
+        data = json.load(cache)
+
+        
         if tipo not in [1,15,28]:
             UDPServerSocket.sendto(str.encode("Mensaje en tipo raro, no le hacemos a eso"), address)
 
-        elif not valid_header(header):
-            UDPServerSocket.sendto(str.encode("Header mal formateado uwu"), address)
-        """
+        #Si tenemos cacheado ya ese dominio
+        elif True:
+            bytesToSend = str.encode(data[domain])
+            UDPServerSocket.sendto(bytesToSend, address)
 
 
-        #else:
-        #Logs
-        logs = open('LOGS', 'a+')
-        actual_date = datetime.datetime.now().isoformat()
-        logs.write(actual_date + ', ' + clientIP + ', ' + ip_response + '\n')
-        logs.close()
-
-
-        #Cache
-        with open('Cache.json') as cache:
-            data = json.load(cache)
+        #Nueva consulta, forwardear
+        else:
+            #Enviamos a resolver, obtenemos ip
+            ip_response, msgFromResolver = sendToResolver(message, ip_resolver)
+            
+            #Agregamos a logs
+            addToLogs(clientIP, ip_response)
+            
+            #Agregamos al cache
             data[domain] = {
-                'date': actual_date,
-                'response': ip_response,
-            }
+                    'date': actual_date,
+                    'response': ip_response,
+                }
+        
+            print(domain) 
 
-
-
-        print(domain) 
-        #print(clientIP)
-
-        # Sending a reply to client
-        UDPServerSocket.sendto(bytesToSend, address)
+            # Respondemos al cliente
+            UDPServerSocket.sendto(bytesToSend, address)
 
 
 
