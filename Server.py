@@ -20,7 +20,7 @@ def extractHeaderDomainOther(message):
     domain = reconstruct(message[12:end_of_string+12])
     tipo = message[end_of_string+14]
     other = message[end_of_string+15:]
-
+    
     return header,domain,tipo,other
 
 
@@ -42,7 +42,6 @@ def reconstruct(arr):
 def bytesToArray(arr):
     bits = []
     for i in range(len(arr)):
-        #print(i, arr[i])
         bits.append(arr[i])
     return bits
 
@@ -55,23 +54,24 @@ def extractIP(arr):
     s = s[:-1]
     return s
 
-def sendToResolver(message, ip_resolver, port=53):
+def sendToResolver(message, ip_resolver, port=53, bufferSize=1024):
     resolver = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     bytesToSend = message
     resolver.sendto(bytesToSend, (ip_resolver,port))
-    msgFromResolver = bytesToArray(resolver.recvfrom(bufferSize)[0])
-
-    print("Resolver: ",msgFromResolver)
+    bytesToSend = resolver.recvfrom(bufferSize)[0]
+    msgFromResolver = bytesToArray(bytesToSend)
+    
     print("IP:", extractIP(msgFromResolver))
     ip_response = extractIP(msgFromResolver)
 
-    return ip_response, msgFromResolver
+    return ip_response, msgFromResolver, bytesToSend
 
 def addToLogs(clientIP, ip_response):
     logs = open('LOGS', 'a+')
     actual_date = datetime.datetime.now().isoformat()
     logs.write(actual_date + ', ' + clientIP + ', ' + ip_response + '\n')
     logs.close()
+    return actual_date
 
 
 """
@@ -126,11 +126,12 @@ def read_config():
     days=days + 30*months,
     hours=hours,
     minutes=minutes,
-)
+    )
+    return data
 
 
 def main(**options):
-    read_config()
+    config = read_config()
     threading._start_new_thread(clean_cache_thread, ())
     puerto = options.get("puerto")
     ip_resolver = options.get("resolver")
@@ -171,19 +172,31 @@ def main(**options):
         if tipo not in [1,15,28]:
             UDPServerSocket.sendto(str.encode("Mensaje en tipo raro, no le hacemos a eso"), address)
 
-        #Si tenemos cacheado ya ese dominio
-        elif False:
-            bytesToSend = str.encode(data[domain])
-            UDPServerSocket.sendto(bytesToSend, address)
+        #Si tenemos que redirigir el dominio
+        elif domain in config['filter']['redirected']:
+            print("Redirigir!")
+            redirect_to = config['filter']['redirected'][domain]
+            print(redirect_to)
+            bytes_to = []
+            to_point = 0
+            for i in range(len(redirect_to)):
+                while (redirect_to[i] != '.')
+                    bytes_to.append(ord(redirect_to[i]))
+                    to_point += 1
+                    
+            print(bytes_to)
+
+            #bytesToSend = str.encode(data[domain])
+            #UDPServerSocket.sendto(bytesToSend, address)
 
 
         #Nueva consulta, forwardear
         else:
             #Enviamos a resolver, obtenemos ip
-            ip_response, msgFromResolver = sendToResolver(message, ip_resolver)
+            ip_response, msgFromResolver, bytesToSend = sendToResolver(message, ip_resolver)
             
             #Agregamos a logs
-            addToLogs(clientIP, ip_response)
+            actual_date = addToLogs(address[0], ip_response)
             
             #Agregamos al cache
             with open('Cache.json') as cache:
