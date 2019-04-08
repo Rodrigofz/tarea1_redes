@@ -7,10 +7,11 @@
     },
     "filter":{
         "redirected":{
-            "www.google.cl":"www.duckduckgo.com"
+            "www.wikipedia.com":"www.sorry.cl"
+
         },
         "excluded":[
-            "www.porno.cl",
+            "www.google.cl",
             "www.sorry.cl/buscaMatis"
         ]
     }

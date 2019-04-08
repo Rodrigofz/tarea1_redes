@@ -19,7 +19,7 @@ def extractHeaderDomainOther(message):
     header = message[:12]
     domain = reconstruct(message[12:end_of_string+12])
     tipo = message[end_of_string+14]
-    other = message[end_of_string+15:]
+    other = message[end_of_string+13:]
     
     return header,domain,tipo,other
 
@@ -60,11 +60,28 @@ def sendToResolver(message, ip_resolver, port=53, bufferSize=1024):
     resolver.sendto(bytesToSend, (ip_resolver,port))
     bytesToSend = resolver.recvfrom(bufferSize)[0]
     msgFromResolver = bytesToArray(bytesToSend)
+    parsear_respuesta(msgFromResolver)
+    
     
     print("IP:", extractIP(msgFromResolver))
     ip_response = extractIP(msgFromResolver)
 
     return ip_response, msgFromResolver, bytesToSend
+
+def parsear_respuesta(msgFromResolver):
+    print("Respuesta:", msgFromResolver)
+    print("Header:", msgFromResolver[:12])
+    limit = find_zero(msgFromResolver[12:])+1
+    print("Query:", msgFromResolver[12:limit+11])
+    print("QType:", msgFromResolver[limit+12:limit+12+2])
+    print("QClass:", msgFromResolver[limit+12+2:limit+12+4])
+    print("Response Name:", msgFromResolver[limit+12+4:limit+12+6])
+    print("Response Type:", msgFromResolver[limit+12+6:limit+12+8])
+    print("Response class:", msgFromResolver[limit+12+8:limit+12+10])
+    print("TTL:", msgFromResolver[limit+12+10:limit+12+14])
+    print("RDLENGTH:", msgFromResolver[limit+12+14:limit+12+16])
+    rdlength = msgFromResolver[limit+12+14:limit+12+16]
+    print("RDATA:", msgFromResolver[limit+12+16:limit+12+16+rdlength[1]])
 
 def addToLogs(clientIP, ip_response):
     logs = open('LOGS', 'a+')
@@ -157,7 +174,7 @@ def main(**options):
         address = bytesAddressPair[1]
         clientIP  = "Client IP Address:{}".format(address)
 
-        header, domain, tipo, _ = extractHeaderDomainOther(message)
+        header, domain, tipo, other = extractHeaderDomainOther(message)
 
         print("Header:", header)
         print("Domain:", domain)
@@ -170,24 +187,44 @@ def main(**options):
 
         
         if tipo not in [1,15,28]:
-            UDPServerSocket.sendto(str.encode("Mensaje en tipo raro, no le hacemos a eso"), address)
+            UDPServerSocket.sendto(str.encode(""), address)
+            print("Ignorando...")
+
+        elif domain in config['filter']['excluded']:
+            UDPServerSocket.sendto(str.encode(""), address)
+            print("Ignorando...")
+
 
         #Si tenemos que redirigir el dominio
         elif domain in config['filter']['redirected']:
             print("Redirigir!")
             redirect_to = config['filter']['redirected'][domain]
             print(redirect_to)
-            bytes_to = []
-            to_point = 0
-            for i in range(len(redirect_to)):
-                while (redirect_to[i] != '.')
-                    bytes_to.append(ord(redirect_to[i]))
-                    to_point += 1
-                    
-            print(bytes_to)
+            words = redirect_to.split('.')
+            
+            #Crea bytes para dominio al que debe redirigirse
+            bytes_domain = []
+            for w in words:
+                bytes_domain.append(len(w))
+                for char in w:
+                    bytes_domain.append(ord(char))
+            bytes_domain.append(0)
+            
+            #Modificar header para que sea una respuesta
+            print("Header antes:", header)
+            header[2:12] = [129, 128, 0, 1, 0, 1, 0, 0, 0, 1]
+
+
+            print("Header despues:", header)
+            print(bytes_domain)
+            print(other)
+            print(header + bytes_domain + other)
+
+            bytesToSend = bytes(header + bytes_domain + other)
+
 
             #bytesToSend = str.encode(data[domain])
-            #UDPServerSocket.sendto(bytesToSend, address)
+            UDPServerSocket.sendto(bytesToSend, address)
 
 
         #Nueva consulta, forwardear
@@ -204,6 +241,7 @@ def main(**options):
                 data[domain] = {
                         'date': actual_date,
                         'response': ip_response,
+
                     }
 
             with open('Cache.json', 'w') as cache:
