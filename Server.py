@@ -230,6 +230,7 @@ def main(**options):
         #Nueva consulta, forwardear
         else:
             #Enviamos a resolver, obtenemos ip
+            print(message)
             ip_response, msgFromResolver, bytesToSend = sendToResolver(message, ip_resolver)
             
             #Agregamos a logs
