@@ -83,6 +83,16 @@ def parsear_respuesta(msgFromResolver):
     rdlength = msgFromResolver[limit+12+14:limit+12+16]
     print("RDATA:", msgFromResolver[limit+12+16:limit+12+16+rdlength[1]])
 
+def parsear_pregunta(msgToResolver):
+    print("Pregunta:", msgToResolver)
+    print("Header:", msgToResolver[:12])
+    limit = find_zero(msgToResolver[12:])+1
+    print("Query:", msgToResolver[12:limit+11])
+    print("QType:", msgToResolver[limit+12:limit+12+2])
+    print("QClass:", msgToResolver[limit+12+2:limit+12+4])
+    print("Lo demas:", msgToResolver[limit+12+4:])
+    
+
 def addToLogs(clientIP, ip_response):
     logs = open('LOGS', 'a+')
     actual_date = datetime.datetime.now().isoformat()
@@ -176,9 +186,9 @@ def main(**options):
 
         header, domain, tipo, other = extractHeaderDomainOther(message)
 
-        print("Header:", header)
+        """print("Header:", header)
         print("Domain:", domain)
-        print("Tipo:", tipo)
+        print("Tipo:", tipo)"""
             
 
         #Cache
@@ -201,7 +211,7 @@ def main(**options):
             redirect_to = config['filter']['redirected'][domain]
             print(redirect_to)
             words = redirect_to.split('.')
-            
+            print(parsear_pregunta(bytesToArray(message)))
             #Crea bytes para dominio al que debe redirigirse
             bytes_domain = []
             for w in words:
@@ -211,14 +221,14 @@ def main(**options):
             bytes_domain.append(0)
             
             #Modificar header para que sea una respuesta
-            print("Header antes:", header)
+            """print("Header antes:", header)
             header[2:12] = [129, 128, 0, 1, 0, 1, 0, 0, 0, 1]
 
 
             print("Header despues:", header)
             print(bytes_domain)
             print(other)
-            print(header + bytes_domain + other)
+            print(header + bytes_domain + other)"""
 
             bytesToSend = bytes(header + bytes_domain + other)
 
@@ -231,6 +241,7 @@ def main(**options):
         else:
             #Enviamos a resolver, obtenemos ip
             print(message)
+            print(parsear_pregunta(bytesToArray(message)))
             ip_response, msgFromResolver, bytesToSend = sendToResolver(message, ip_resolver)
             
             #Agregamos a logs
