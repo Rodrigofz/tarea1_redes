@@ -170,17 +170,6 @@ def read_config():
     )
     return data
 
-def stringToArray(bytes):
-    i=0;
-    array = []
-    while(i<len(bytes)):
-        if(bytes[i] == "\\" ):
-            array += [str(bytes[i]) + "x" + str(bytes[i+2]) + str(bytes[i+3])]
-            i += 4
-        else:
-            array += [str(bytes[i])]
-    return array
-
 def readBytes(arr):
     i=0
     array = []
