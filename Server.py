@@ -160,6 +160,16 @@ def read_config():
     )
     return data
 
+def stringToArray(bytes):
+    i=0;
+    array = []
+    while(i<len(bytes)):
+        if(bytes[i] == "\\"):
+            array += [str(bytes[i]) + "x" + str(bytes[i+2]) + str(bytes[i+3])]
+            i += 4
+        else:
+            array += [str(bytes[i])]
+    return array
 
 def main(**options):
     config = read_config()
@@ -241,7 +251,16 @@ def main(**options):
             UDPServerSocket.sendto(bytesToSend, address)
 
         elif(domain in data):
-            print(bytesToArray(data[domain]["response"]))
+            lawea_str = data[domain]["response"].split('\'')[1].replace('\\\\', '\\')
+            print(lawea_str)
+            print(bytesToArray(lawea_str))
+            lawea = bytes(lawea_str, 'utf-8')
+            lawea = lawea[2:]
+            laotrawea = message[0:2]
+            lagranwea = laotrawea + lawea
+            print(bytesToArray(lagranwea))
+            UDPServerSocket.sendto(lagranwea, address)
+
         
         #Nueva consulta, forwardear
         else:
