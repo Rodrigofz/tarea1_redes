@@ -67,7 +67,7 @@ def sendToResolver(message, domain, ip_resolver, port=53, bufferSize=1024):
         data = json.load(cache)
         data[domain] = {
                 'date': actual_date,
-                'response': str(bytesToSend),
+                'response': bytesToSend.hex(),
 
             }
 
@@ -96,6 +96,16 @@ def parsear_respuesta(msgFromResolver):
     print("RDLENGTH:", msgFromResolver[limit+12+14:limit+12+16])
     rdlength = msgFromResolver[limit+12+14:limit+12+16]
     print("RDATA:", msgFromResolver[limit+12+16:limit+12+16+rdlength[1]])
+
+def parsear_pregunta(msgToResolver):
+    print("Pregunta:", msgToResolver)
+    print("Header:", msgToResolver[:12])
+    limit = find_zero(msgToResolver[12:])+1
+    print("Query:", msgToResolver[12:limit+11])
+    print("QType:", msgToResolver[limit+12:limit+12+2])
+    print("QClass:", msgToResolver[limit+12+2:limit+12+4])
+    print("Lo demas:", msgToResolver[limit+12+4:])
+    
 
 def addToLogs(clientIP, ip_response):
     logs = open('LOGS', 'a+')
@@ -164,11 +174,23 @@ def stringToArray(bytes):
     i=0;
     array = []
     while(i<len(bytes)):
-        if(bytes[i] == "\\"):
+        if(bytes[i] == "\\" ):
             array += [str(bytes[i]) + "x" + str(bytes[i+2]) + str(bytes[i+3])]
             i += 4
         else:
             array += [str(bytes[i])]
+    return array
+
+def readBytes(arr):
+    i=0
+    array = []
+    while(i<len(arr)):
+        if(arr[i]=="\\" and arr[i+1]=="\\"):
+            array.append(arr[i+2]*16 + arr[i+3])
+            i += 4
+        else:
+            array.append(arr[i])
+            i += 1
     return array
 
 def main(**options):
@@ -200,9 +222,9 @@ def main(**options):
 
         header, domain, tipo, other = extractHeaderDomainOther(message)
 
-        print("Header:", header)
+        """print("Header:", header)
         print("Domain:", domain)
-        print("Tipo:", tipo)
+        print("Tipo:", tipo)"""
             
 
         #Cache
@@ -225,7 +247,7 @@ def main(**options):
             redirect_to = config['filter']['redirected'][domain]
             print(redirect_to)
             words = redirect_to.split('.')
-            
+            print(parsear_pregunta(bytesToArray(message)))
             #Crea bytes para dominio al que debe redirigirse
             bytes_domain = []
             for w in words:
@@ -235,14 +257,14 @@ def main(**options):
             bytes_domain.append(0)
             
             #Modificar header para que sea una respuesta
-            print("Header antes:", header)
+            """print("Header antes:", header)
             header[2:12] = [129, 128, 0, 1, 0, 1, 0, 0, 0, 1]
 
 
             print("Header despues:", header)
             print(bytes_domain)
             print(other)
-            print(header + bytes_domain + other)
+            print(header + bytes_domain + other)"""
 
             bytesToSend = bytes(header + bytes_domain + other)
 
@@ -250,22 +272,19 @@ def main(**options):
             #bytesToSend = str.encode(data[domain])
             UDPServerSocket.sendto(bytesToSend, address)
 
+        #Si esta cacheado
         elif(domain in data):
-            lawea_str = data[domain]["response"].split('\'')[1].replace('\\\\', '\\')
-            print(lawea_str)
-            print(bytesToArray(lawea_str))
-            lawea = bytes(lawea_str, 'utf-8')
-            lawea = lawea[2:]
-            laotrawea = message[0:2]
-            lagranwea = laotrawea + lawea
-            print(bytesToArray(lagranwea))
-            UDPServerSocket.sendto(lagranwea, address)
+            respuesta_cacheada = data[domain]["response"]
+            mensaje_inicial = message.hex() 
+            respuesta_cliente =  mensaje_inicial[0:4] + respuesta_cacheada[4:] 
+            UDPServerSocket.sendto(bytes.fromhex(respuesta_cliente), address)
 
         
         #Nueva consulta, forwardear
         else:
             #Enviamos a resolver, obtenemos ip
             ip_response, msgFromResolver, bytesToSend = sendToResolver(message, domain, ip_resolver)
+
             
             #Agregamos a logs
             actual_date = addToLogs(address[0], ip_response)
