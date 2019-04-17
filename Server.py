@@ -54,12 +54,26 @@ def extractIP(arr):
     s = s[:-1]
     return s
 
-def sendToResolver(message, ip_resolver, port=53, bufferSize=1024):
+def sendToResolver(message, domain, ip_resolver, port=53, bufferSize=1024):
+    actual_date = datetime.datetime.now().isoformat()
     resolver = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     bytesToSend = message
     resolver.sendto(bytesToSend, (ip_resolver,port))
     bytesToSend = resolver.recvfrom(bufferSize)[0]
     msgFromResolver = bytesToArray(bytesToSend)
+
+    #Agregamos al cache
+    with open('Cache.json') as cache:
+        data = json.load(cache)
+        data[domain] = {
+                'date': actual_date,
+                'response': str(bytesToSend),
+
+            }
+
+    with open('Cache.json', 'w') as cache:
+        json.dump(data, cache, indent=4)
+
     parsear_respuesta(msgFromResolver)
     
     
@@ -226,27 +240,18 @@ def main(**options):
             #bytesToSend = str.encode(data[domain])
             UDPServerSocket.sendto(bytesToSend, address)
 
-
+        elif(domain in data):
+            print(bytesToArray(data[domain]["response"]))
+        
         #Nueva consulta, forwardear
         else:
             #Enviamos a resolver, obtenemos ip
-            print(message)
-            ip_response, msgFromResolver, bytesToSend = sendToResolver(message, ip_resolver)
+            ip_response, msgFromResolver, bytesToSend = sendToResolver(message, domain, ip_resolver)
             
             #Agregamos a logs
             actual_date = addToLogs(address[0], ip_response)
             
-            #Agregamos al cache
-            with open('Cache.json') as cache:
-                data = json.load(cache)
-                data[domain] = {
-                        'date': actual_date,
-                        'response': ip_response,
-
-                    }
-
-            with open('Cache.json', 'w') as cache:
-                json.dump(data, cache, indent=4)
+            
         
             print(domain) 
 
