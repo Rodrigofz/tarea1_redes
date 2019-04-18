@@ -289,7 +289,7 @@ def main(**options):
         else:
             #Enviamos a resolver, obtenemos ip
             ip_response, msgFromResolver, bytesToSend = sendToResolver(message, domain, ip_resolver)
-
+            indice_respuesta,rdata,rdlength = parsear_respuesta(msgFromResolver)
             
             #Agregamos a logs
             actual_date = addToLogs(address[0], ip_response)
