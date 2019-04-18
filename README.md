@@ -167,3 +167,14 @@ www.ucursos.cl.		1199	IN	A	68.183.16.8
 ;; WHEN: Thu Apr 18 15:15:08 -04 2019
 ;; MSG SIZE  rcvd: 48
 ```
+
+- Respuesta a [google](https://www.google.cl) que está excluido. En este caso, la consulta es simplemente ignorada:
+
+```{bash}
+
+>> dig -t A www.google.cl @localhost -p 8000
+
+; <<>> DiG 9.10.6 <<>> -t A www.google.cl @localhost -p 8000
+;; global options: +cmd
+;; connection timed out; no servers could be reached
+```
