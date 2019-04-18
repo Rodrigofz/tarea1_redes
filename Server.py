@@ -238,10 +238,13 @@ def main(**options):
             indice_respuesta,rdata,rdlength = parsear_respuesta(msgFromResolver)
 
             hexage = bytesToSend.hex()
-            numberResponses = hexage[15]
-            hexage = hexage[:14] + '01' + hexage[16:]
 
-            print(hexage[16:])
+            numberResponses = hexage[15]
+            #hexage = hexage[:14] + '01' + hexage[16:]
+
+
+            print("HEXAGE:")
+            print(hexage)
 
             hexa_rdata = ''
             for i in rdata:
