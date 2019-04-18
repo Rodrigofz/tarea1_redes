@@ -180,3 +180,17 @@ www.ucursos.cl.		1199	IN	A	68.183.16.8
 ;; global options: +cmd
 ;; connection timed out; no servers could be reached
 ```
+### Caso sin cubrir
+
+Cuando se intenta redirigir [Wikipedia](https://www.wikipedia.com) a otra dirección devuelve una respuesta incorrecta. Esto se debe a que por algún motivo la respuesta viene con un QTYPE = 5, el cual no coincide con ninguno de los tipos indicados en la tarea. Una posible solución para este problema es cambiar este QTYPE al retornar la respuesta al cliente, esto no se implementó en esta ocasión.
+
+```{bash}
+>> dig -t A www.wikipedia.com @localhost -p 8000
+
+;; Got bad packet: bad label type
+49 bytes
+1c d8 81 80 00 01 00 01 00 00 00 01 03 77 77 77          .............www
+09 77 69 6b 69 70 65 64 69 61 03 63 6f 6d 00 00          .wikipedia.com..
+01 00 01 c0 0c 00 05 00 01 00 00 01 b8 00 02 44          ...............D
+b7                                                       .
+```
