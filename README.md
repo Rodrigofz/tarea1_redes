@@ -48,7 +48,7 @@ Los logs son guardados en el archivo [LOGS](./LOGS). Estos contienen un timestam
 
 ## Cache
 
-El caché es guardado en el archivo [Cache.json](./Cache.json), es leible por seres humanos, pero no es necesario que el usuario lo vea. Cada registro se limpia cuando transcurre el tiempo indicado en la configuración.
+El caché es guardado en el archivo [Cache.json](./Cache.json), a pesar de que puede hacerlo, no es un archivo diseñado para ser visto por el usuario. Cada registro se limpia cuando transcurre el tiempo indicado en la configuración.
 
 ---
 
@@ -142,6 +142,8 @@ u-cursos.cl.		1199	IN	SOA	ns1.u-cursos.cl. root.u-cursos.cl. 2017111302 1200 300
 ;; WHEN: Thu Apr 18 15:11:07 -04 2019
 ;; MSG SIZE  rcvd: 89
 ```
+
+### Consultas filtradas:
 
 - Respuesta de ucursos redirigido a [68.183.16.8](http://www.sorry.cl) en consulta tipo A. Notar que esta a pesar de mostrar un warning, retorna la ip efectivamente cambiada:
 
