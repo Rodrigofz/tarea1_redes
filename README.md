@@ -170,7 +170,7 @@ www.ucursos.cl.		1199	IN	A	68.183.16.8
 ;; MSG SIZE  rcvd: 48
 ```
 
-- Respuesta a [google](https://www.google.cl) que está excluido. En este caso, la consulta es simplemente ignorada:
+- Respuesta a [google](http://www.google.cl) que está excluido. En este caso, la consulta es simplemente ignorada:
 
 ```{bash}
 
@@ -182,7 +182,7 @@ www.ucursos.cl.		1199	IN	A	68.183.16.8
 ```
 ### Caso sin cubrir
 
-Cuando se intenta redirigir [Wikipedia](https://www.wikipedia.com) a otra dirección devuelve una respuesta incorrecta. Esto se debe a que por algún motivo la respuesta viene con un QTYPE = 5, el cual no coincide con ninguno de los tipos indicados en la tarea. Una posible solución para este problema es cambiar este QTYPE al retornar la respuesta al cliente, esto no se implementó en esta ocasión.
+Cuando se intenta redirigir [wikipedia](http://www.wikipedia.com) a otra dirección devuelve una respuesta incorrecta. Esto se debe a que por algún motivo la respuesta viene con un QTYPE = 5, el cual no coincide con ninguno de los tipos indicados en la tarea. Una posible solución para este problema es cambiar este QTYPE al retornar la respuesta al cliente, esto no se implementó en esta ocasión.
 
 ```{bash}
 >> dig -t A www.wikipedia.com @localhost -p 8000
