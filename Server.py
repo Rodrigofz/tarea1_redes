@@ -72,15 +72,12 @@ def sendToResolver(message, domain, ip_resolver, port=53, bufferSize=1024):
             }
 
     with open('Cache.json', 'w') as cache:
-        json.dump(data, cache, indent=4)
-
-    indice_respuesta = parsear_respuesta(msgFromResolver)
-    
+        json.dump(data, cache, indent=4)    
     
     print("IP:", extractIP(msgFromResolver))
     ip_response = extractIP(msgFromResolver)
 
-    return ip_response, msgFromResolver, bytesToSend, indice_respuesta
+    return ip_response, msgFromResolver, bytesToSend
 
 def parsear_respuesta(msgFromResolver):
     print("Respuesta:", msgFromResolver)
@@ -96,7 +93,7 @@ def parsear_respuesta(msgFromResolver):
     print("RDLENGTH:", msgFromResolver[limit+12+14:limit+12+16])
     rdlength = msgFromResolver[limit+12+14:limit+12+16]
     print("RDATA:", msgFromResolver[limit+12+16:limit+12+16+rdlength[1]])
-    return limit+12+4
+    return limit+12+16, msgFromResolver[limit+12+16:limit+12+16+rdlength[1]]
 
 def parsear_pregunta(msgToResolver):
     print("Pregunta:", msgToResolver)
@@ -171,17 +168,6 @@ def read_config():
     )
     return data
 
-def stringToArray(bytes):
-    i=0;
-    array = []
-    while(i<len(bytes)):
-        if(bytes[i] == "\\" ):
-            array += [str(bytes[i]) + "x" + str(bytes[i+2]) + str(bytes[i+3])]
-            i += 4
-        else:
-            array += [str(bytes[i])]
-    return array
-
 def readBytes(arr):
     i=0
     array = []
@@ -248,18 +234,34 @@ def main(**options):
             redirect_to = config['filter']['redirected'][domain]
             print(redirect_to)
             
-            ip_response, msgFromResolver, bytesToSend, indice_respuesta = sendToResolver(message, domain, ip_resolver)
-
-
+            ip_response, msgFromResolver, bytesToSend = sendToResolver(message, domain, ip_resolver)
+            indice_respuesta,rdata = parsear_respuesta(msgFromResolver)
             hexage = bytesToSend.hex()
-            hexage = hexage[:15] + '01' + hexage[16:indice_respuesta]+'' #Cambiamos el numero de respuestas
+            #hexage = hexage[:15] + '01' + hexage[16:indice_respuesta]+''
 
-            print(hexage)
+            print(hexage[16:])
+
+            hexa_rdata = ''
+            for i in rdata:
+                hexa_rdata += hex(i)[2:4]
+
+            print("HEXARDATA: " + hexa_rdata) 
 
 
+            new_ip = config['filter']['redirected'][domain].split('.')
+            
+            print(new_ip)
+            
+            hexa_newip = ''
+            for i in new_ip:
+                if(int(i)<16):
+                    hexa_newip += '0' + i
+                else:
+                    hexa_newip += hex(int(i))[2:]
 
-
-            UDPServerSocket.sendto(bytesToSend, address)
+            hexage = hexage.replace(hexa_rdata,hexa_newip)
+            print(hexa_newip)
+            UDPServerSocket.sendto(bytes.fromhex(hexage), address)
 
         #Si esta cacheado
         elif(domain in data):
@@ -272,7 +274,6 @@ def main(**options):
         #Nueva consulta, forwardear
         else:
             #Enviamos a resolver, obtenemos ip
-            parsear_pregunta(bytesToArray(message))
             ip_response, msgFromResolver, bytesToSend = sendToResolver(message, domain, ip_resolver)
 
             

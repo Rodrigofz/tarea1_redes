@@ -7,12 +7,12 @@
     },
     "filter":{
         "redirected":{
-            "www.wikipedia.com":"68.183.16.8"
+            "www.wikipedia.com":"68.183.16.8",
+            "www.u-cursos.cl":"68.183.16.8"
 
         },
         "excluded":[
-            "www.google.cl",
-            "www.sorry.cl/buscaMatis"
+            "www.google.cl"
         ]
     }
 }
