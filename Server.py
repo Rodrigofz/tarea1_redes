@@ -237,9 +237,10 @@ def main(**options):
             ip_response, msgFromResolver, bytesToSend = sendToResolver(message, domain, ip_resolver)
             indice_respuesta,rdata = parsear_respuesta(msgFromResolver)
             hexage = bytesToSend.hex()
-            #hexage = hexage[:15] + '01' + hexage[16:indice_respuesta]+''
+            #hexage = hexage[:15] + '01' + hexage[16:]
 
-            print(hexage[16:])
+            print("HEXAGE:")
+            print(hexage)
 
             hexa_rdata = ''
             for i in rdata:
