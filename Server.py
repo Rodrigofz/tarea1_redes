@@ -93,7 +93,7 @@ def parsear_respuesta(msgFromResolver):
     print("RDLENGTH:", msgFromResolver[limit+12+14:limit+12+16])
     rdlength = msgFromResolver[limit+12+14:limit+12+16]
     print("RDATA:", msgFromResolver[limit+12+16:limit+12+16+rdlength[1]])
-    return limit+12+16, msgFromResolver[limit+12+16:limit+12+16+rdlength[1]]
+    return limit+12+4, msgFromResolver[limit+12+16:limit+12+16+rdlength[1]], rdlength
 
 def parsear_pregunta(msgToResolver):
     print("Pregunta:", msgToResolver)
@@ -235,19 +235,22 @@ def main(**options):
             print(redirect_to)
             
             ip_response, msgFromResolver, bytesToSend = sendToResolver(message, domain, ip_resolver)
-            indice_respuesta,rdata = parsear_respuesta(msgFromResolver)
+            indice_respuesta,rdata,rdlength = parsear_respuesta(msgFromResolver)
+
             hexage = bytesToSend.hex()
-            #hexage = hexage[:15] + '01' + hexage[16:indice_respuesta]+''
+            numberResponses = hexage[15]
+            hexage = hexage[:14] + '01' + hexage[16:]
 
             print(hexage[16:])
 
             hexa_rdata = ''
             for i in rdata:
-                hexa_rdata += hex(i)[2:4]
+                if(int(i)<16):
+                    hexa_rdata += '0' + str(i)
+                else:
+                    hexa_rdata += hex(i)[2:]
 
             print("HEXARDATA: " + hexa_rdata) 
-
-
             new_ip = config['filter']['redirected'][domain].split('.')
             
             print(new_ip)
@@ -261,6 +264,14 @@ def main(**options):
 
             hexage = hexage.replace(hexa_rdata,hexa_newip)
             print(hexa_newip)
+
+            #Ahora hay que borrar las respuestas que no nos interesan
+            #Sabemos que hay 12 bytes fijos de respuesta + RDLENGTH
+            #hay que eliminar desde: indice_respuesta + (12 + rdlength)
+            #hasta:                  indice_respuesta + (numberResponses-1)*(12 + rdlength)
+            #hexage = hexage[0:(indice_respuesta + (12 + rdlength))] + hexage[indice_respuesta + (numberResponses-1)*(12 + rdlength)] 
+
+
             UDPServerSocket.sendto(bytes.fromhex(hexage), address)
 
         #Si esta cacheado
