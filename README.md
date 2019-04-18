@@ -42,7 +42,7 @@ Esto significa que el proxy esta listo para recibir consultas.
 
 ## Logs
 
-Los logs son guardados en el archivo [LOGS](./LOGS). Estos contienen un timestamp correspondiente a cada consulta recibida, el ip del cliente que realiza la consulta y el (o los) ip que se le respondió a este.
+Los logs son guardados en el archivo [LOGS](./LOGS). Estos contienen un timestamp correspondiente a cada consulta recibida, el ip del cliente que realiza la consulta y el ip que se le respondió a este.
 
 ---
 
