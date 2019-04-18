@@ -250,6 +250,9 @@ def main(**options):
             new_ip = config['filter']['redirected'][domain]
             print(new_ip)
 
+            
+
+
             #Para comprobar si se tiene que reemplazar la ip o no
             replace = False
             print(qtype)
@@ -259,14 +262,28 @@ def main(**options):
                     print("hola")
                     new_ip = new_ip.split(".")
                     replace = True
+                    #Sacar el hexadecimal de la ip nueva
+                    hexa_newip = ''
+                    for i in new_ip:
+                        if(int(i)<16):
+                            hexa_newip += '0' + i
+                        else:
+                            hexa_newip += hex(int(i))[2:]
+            
 
-            elif(qtype==28):
+            elif(qtype[1]==28):
                 #AAAA
                 if(":" in new_ip):
                     new_ip = new_ip.split(":")
+                    print("new_ip:", new_ip)
                     replace = True
+                    hexa_newip = ''
+                    for val in new_ip:
+                        new_ip += val
+                    print(hexa_newip)
 
-            elif(qtype==15):
+
+            elif(qtype[1]==15):
                 #MX
                 break
 
@@ -274,13 +291,6 @@ def main(**options):
             if (not replace):
                 continue
 
-            #Sacar el hexadecimal de la ip nueva
-            hexa_newip = ''
-            for i in new_ip:
-                if(int(i)<16):
-                    hexa_newip += '0' + i
-                else:
-                    hexa_newip += hex(int(i))[2:]
 
             #Encontrar la ip antigua en hexa_rdata
             hexa_oldip = ''
@@ -301,7 +311,7 @@ def main(**options):
             #Sabemos que hay 12 bytes fijos de respuesta + RDLENGTH
             #hay que eliminar desde: indice_respuesta + (12 + rdlength)
             #hasta:                  indice_respuesta + (numberResponses-1)*(12 + rdlength)
-            hexage = hexage[0:(indice_respuesta + (12 + rdlength))*2] #+ hexage[(indice_respuesta + (12 + rdlength))*2:(indice_respuesta + (numberResponses-1)*(12 + rdlength))*2] 
+            hexage = hexage[0:(indice_respuesta + (12 + rdlength))*2] + hexage[(indice_respuesta + (12 + rdlength))*2:(indice_respuesta + (numberResponses-1)*(12 + rdlength))*2] 
 
 
             UDPServerSocket.sendto(bytes.fromhex(hexage), address)
@@ -318,7 +328,7 @@ def main(**options):
         else:
             #Enviamos a resolver, obtenemos ip
             ip_response, msgFromResolver, bytesToSend = sendToResolver(message, domain, ip_resolver)
-            indice_respuesta,rdata,rdlength = parsear_respuesta(msgFromResolver)
+            indice_respuesta,rdata,rdlength, qtype = parsear_respuesta(msgFromResolver)
             
             #Agregamos a logs
             actual_date = addToLogs(address[0], ip_response)
