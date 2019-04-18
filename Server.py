@@ -223,10 +223,12 @@ def main(**options):
         if tipo not in [1,15,28]:
             UDPServerSocket.sendto(str.encode(""), address)
             print("Ignorando...")
+            continue
 
         elif domain in config['filter']['excluded']:
             UDPServerSocket.sendto(str.encode(""), address)
             print("Ignorando...")
+            continue
 
 
         #Si tenemos que redirigir el dominio
@@ -289,7 +291,7 @@ def main(**options):
 
             #Si replace es False, no seguir con el reemplazo
             if (not replace):
-                continue
+                pass
 
 
             #Encontrar la ip antigua en hexa_rdata
@@ -315,6 +317,7 @@ def main(**options):
 
 
             UDPServerSocket.sendto(bytes.fromhex(hexage), address)
+            continue
 
         #Si esta cacheado
         elif(domain in data):
@@ -322,23 +325,24 @@ def main(**options):
             mensaje_inicial = message.hex() 
             respuesta_cliente =  mensaje_inicial[0:4] + respuesta_cacheada[4:] 
             UDPServerSocket.sendto(bytes.fromhex(respuesta_cliente), address)
+            continue
 
         
-        #Nueva consulta, forwardear
-        else:
-            #Enviamos a resolver, obtenemos ip
-            ip_response, msgFromResolver, bytesToSend = sendToResolver(message, domain, ip_resolver)
-            indice_respuesta,rdata,rdlength, qtype = parsear_respuesta(msgFromResolver)
-            
-            #Agregamos a logs
-            actual_date = addToLogs(address[0], ip_response)
-            
-            
-        
-            print(domain) 
 
-            # Respondemos al cliente
-            UDPServerSocket.sendto(bytesToSend, address)
+        
+        #Enviamos a resolver, obtenemos ip
+        ip_response, msgFromResolver, bytesToSend = sendToResolver(message, domain, ip_resolver)
+
+        
+        #Agregamos a logs
+        actual_date = addToLogs(address[0], ip_response)
+        
+        
+    
+        print(domain) 
+
+        # Respondemos al cliente
+        UDPServerSocket.sendto(bytesToSend, address)
 
 
 

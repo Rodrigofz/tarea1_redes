@@ -48,7 +48,7 @@ Los logs son guardados en el archivo [LOGS](./LOGS). Estos contienen un timestam
 
 ## Cache
 
-El caché es guardado en el archivo [Cache.json](./Cache.json), es leible por seres humanos, pero no es necesario que el usuario lo vea. Cada registro se limpia cuando transcurre el tiempo indicado en la configuración.
+El caché es guardado en el archivo [Cache.json](./Cache.json), a pesar de que puede hacerlo, no es un archivo diseñado para ser visto por el usuario. Cada registro se limpia cuando transcurre el tiempo indicado en la configuración.
 
 ---
 
@@ -143,6 +143,8 @@ u-cursos.cl.		1199	IN	SOA	ns1.u-cursos.cl. root.u-cursos.cl. 2017111302 1200 300
 ;; MSG SIZE  rcvd: 89
 ```
 
+### Consultas filtradas:
+
 - Respuesta de ucursos redirigido a [68.183.16.8](http://www.sorry.cl) en consulta tipo A. Notar que esta a pesar de mostrar un warning, retorna la ip efectivamente cambiada:
 
 ```{bash}
@@ -168,7 +170,7 @@ www.ucursos.cl.		1199	IN	A	68.183.16.8
 ;; MSG SIZE  rcvd: 48
 ```
 
-- Respuesta a [google](https://www.google.cl) que está excluido. En este caso, la consulta es simplemente ignorada:
+- Respuesta a [google](http://www.google.cl) que está excluido. En este caso, la consulta es simplemente ignorada:
 
 ```{bash}
 
@@ -177,4 +179,18 @@ www.ucursos.cl.		1199	IN	A	68.183.16.8
 ; <<>> DiG 9.10.6 <<>> -t A www.google.cl @localhost -p 8000
 ;; global options: +cmd
 ;; connection timed out; no servers could be reached
+```
+### Caso sin cubrir
+
+Cuando se intenta redirigir [wikipedia](http://www.wikipedia.com) a otra dirección devuelve una respuesta incorrecta. Esto se debe a que por algún motivo la respuesta viene con un QTYPE = 5, el cual no coincide con ninguno de los tipos indicados en la tarea. Una posible solución para este problema es cambiar este QTYPE al retornar la respuesta al cliente, esto no se implementó en esta ocasión.
+
+```{bash}
+>> dig -t A www.wikipedia.com @localhost -p 8000
+
+;; Got bad packet: bad label type
+49 bytes
+1c d8 81 80 00 01 00 01 00 00 00 01 03 77 77 77          .............www
+09 77 69 6b 69 70 65 64 69 61 03 63 6f 6d 00 00          .wikipedia.com..
+01 00 01 c0 0c 00 05 00 01 00 00 01 b8 00 02 44          ...............D
+b7                                                       .
 ```
