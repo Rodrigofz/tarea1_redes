@@ -93,7 +93,7 @@ def parsear_respuesta(msgFromResolver):
     print("RDLENGTH:", msgFromResolver[limit+12+14:limit+12+16])
     rdlength = msgFromResolver[limit+12+14:limit+12+16]
     print("RDATA:", msgFromResolver[limit+12+16:limit+12+16+rdlength[1]])
-    return limit+12+4, msgFromResolver[limit+12+16:limit+12+16+rdlength[1]], rdlength
+    return limit+12+4, msgFromResolver[limit+12+16:limit+12+16+rdlength[1]], rdlength[1]
 
 def parsear_pregunta(msgToResolver):
     print("Pregunta:", msgToResolver)
@@ -239,8 +239,8 @@ def main(**options):
 
             hexage = bytesToSend.hex()
 
-            numberResponses = hexage[15]
-            #hexage = hexage[:14] + '01' + hexage[16:]
+            numberResponses = int(hexage[15])
+            hexage = hexage[:14] + '01' + hexage[16:]
 
 
             print("HEXAGE:")
@@ -272,7 +272,7 @@ def main(**options):
             #Sabemos que hay 12 bytes fijos de respuesta + RDLENGTH
             #hay que eliminar desde: indice_respuesta + (12 + rdlength)
             #hasta:                  indice_respuesta + (numberResponses-1)*(12 + rdlength)
-            #hexage = hexage[0:(indice_respuesta + (12 + rdlength))] + hexage[indice_respuesta + (numberResponses-1)*(12 + rdlength)] 
+            hexage = hexage[0:(indice_respuesta + (12 + rdlength))*2] #+ hexage[(indice_respuesta + (12 + rdlength))*2:(indice_respuesta + (numberResponses-1)*(12 + rdlength))*2] 
 
 
             UDPServerSocket.sendto(bytes.fromhex(hexage), address)
