@@ -85,6 +85,7 @@ def parsear_respuesta(msgFromResolver):
     limit = find_zero(msgFromResolver[12:])+1
     print("Query:", msgFromResolver[12:limit+11])
     print("QType:", msgFromResolver[limit+12:limit+12+2])
+    qtype = msgFromResolver[limit+12:limit+12+2]
     print("QClass:", msgFromResolver[limit+12+2:limit+12+4])
     print("Response Name:", msgFromResolver[limit+12+4:limit+12+6])
     print("Response Type:", msgFromResolver[limit+12+6:limit+12+8])
@@ -93,7 +94,7 @@ def parsear_respuesta(msgFromResolver):
     print("RDLENGTH:", msgFromResolver[limit+12+14:limit+12+16])
     rdlength = msgFromResolver[limit+12+14:limit+12+16]
     print("RDATA:", msgFromResolver[limit+12+16:limit+12+16+rdlength[1]])
-    return limit+12+4, msgFromResolver[limit+12+16:limit+12+16+rdlength[1]], rdlength[1]
+    return limit+12+4, msgFromResolver[limit+12+16:limit+12+16+rdlength[1]], rdlength[1], qtype
 
 def parsear_pregunta(msgToResolver):
     print("Pregunta:", msgToResolver)
@@ -235,29 +236,45 @@ def main(**options):
             print(redirect_to)
             
             ip_response, msgFromResolver, bytesToSend = sendToResolver(message, domain, ip_resolver)
-            indice_respuesta,rdata,rdlength = parsear_respuesta(msgFromResolver)
+            indice_respuesta,rdata,rdlength, qtype = parsear_respuesta(msgFromResolver)
 
+            #Cambiar las respuestas por solo 1
             hexage = bytesToSend.hex()
-
             numberResponses = int(hexage[15])
             hexage = hexage[:14] + '01' + hexage[16:]
-
-
             print("HEXAGE:")
             print(hexage)
 
-            hexa_rdata = ''
-            for i in rdata:
-                if(int(i)<16):
-                    hexa_rdata += '0' + str(i)
-                else:
-                    hexa_rdata += hex(i)[2:]
-
-            print("HEXARDATA: " + hexa_rdata) 
-            new_ip = config['filter']['redirected'][domain].split('.')
             
+            
+            new_ip = config['filter']['redirected'][domain]
             print(new_ip)
-            
+
+            #Para comprobar si se tiene que reemplazar la ip o no
+            replace = False
+            print(qtype)
+            if(qtype[1]==1):
+                #A
+                if("." in new_ip):
+                    print("hola")
+                    new_ip = new_ip.split(".")
+                    replace = True
+
+            elif(qtype==28):
+                #AAAA
+                if(":" in new_ip):
+                    new_ip = new_ip.split(":")
+                    replace = True
+
+            elif(qtype==15):
+                #MX
+                break
+
+            #Si replace es False, no seguir con el reemplazo
+            if (not replace):
+                continue
+
+            #Sacar el hexadecimal de la ip nueva
             hexa_newip = ''
             for i in new_ip:
                 if(int(i)<16):
@@ -265,9 +282,21 @@ def main(**options):
                 else:
                     hexa_newip += hex(int(i))[2:]
 
-            hexage = hexage.replace(hexa_rdata,hexa_newip)
+            #Encontrar la ip antigua en hexa_rdata
+            hexa_oldip = ''
+            for i in rdata:
+                if(int(i)<16):
+                    hexa_oldip += '0' + str(i)
+                else:
+                    hexa_oldip += hex(i)[2:]
+
+            print("HEXARDATA: " + hexa_oldip) 
+            
+            #Reemplazar la ip antigua con la ip nueva
+            hexage = hexage.replace(hexa_oldip, hexa_newip)
             print(hexa_newip)
 
+            #Borrar las demas ips
             #Ahora hay que borrar las respuestas que no nos interesan
             #Sabemos que hay 12 bytes fijos de respuesta + RDLENGTH
             #hay que eliminar desde: indice_respuesta + (12 + rdlength)

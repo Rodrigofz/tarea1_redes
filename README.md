@@ -58,7 +58,7 @@ El caché es guardado en el archivo [Cache.json](./Cache.json), es leible por se
 
 - Sería ideal que al redirigir no fuera necesario ingresar la ip del link al cual se redirige. Sin embargo esto no pudo ser implementado. 
 
-- También con respecto al punto anterior, la redirección no funciona correctamente si es que el tipo de consulta no corresponde al tipo de ip que está guardado. Por ejemplo si se esta redirigiendo [www.wikipedia.com](www.wikipedia.com) al link IPv4 [68.183.16.8](www.sorry.cl), una consulta de tipo AAAA por wikipedia no se redirigirá correctamente.
+- También con respecto al punto anterior, la redirección no funciona correctamente si es que el tipo de consulta no corresponde al tipo de ip que está guardado. Por ejemplo si se esta redirigiendo [www.wikipedia.com](http://www.wikipedia.com) al link IPv4 [68.183.16.8](http://www.sorry.cl), una consulta de tipo AAAA por wikipedia no se redirigirá correctamente.
 
 ---
 
