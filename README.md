@@ -52,6 +52,16 @@ El caché es guardado en el archivo [Cache.json](./Cache.json), es leible por se
 
 ---
 
+## Problemas no resueltos
+
+- El caché guarda los bits de la respuesta tal y como vienen del resolver. Esto causa que el caché este asociado a un tipo de consulta, por lo que si luego se realiza una consulta de un tipo distinto al que está guardado, retornará una respuesta incorrecta.
+
+- Sería ideal que al redirigir no fuera necesario ingresar la ip del link al cual se redirige. Sin embargo esto no pudo ser implementado. 
+
+- También con respecto al punto anterior, la redirección no funciona correctamente si es que el tipo de consulta no corresponde al tipo de ip que está guardado. Por ejemplo si se esta redirigiendo [www.wikipedia.com](www.wikipedia.com) al link IPv4 [68.183.16.8](www.sorry.cl), una consulta de tipo AAAA por wikipedia no se redirigirá correctamente.
+
+---
+
 ## Aquí termina el readme serio
 
 ---
