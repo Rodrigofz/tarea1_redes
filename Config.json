@@ -3,11 +3,11 @@
         "months" : 0,
         "days" : 0,
         "hours" : 0,
-        "minutes" : 1
+        "minutes" : 0
     },
     "filter":{
         "redirected":{
-            "www.wikipedia.com":"www.sorry.cl"
+            "www.wikipedia.com":"68.183.16.8"
 
         },
         "excluded":[

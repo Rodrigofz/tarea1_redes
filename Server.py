@@ -54,19 +54,33 @@ def extractIP(arr):
     s = s[:-1]
     return s
 
-def sendToResolver(message, ip_resolver, port=53, bufferSize=1024):
+def sendToResolver(message, domain, ip_resolver, port=53, bufferSize=1024):
+    actual_date = datetime.datetime.now().isoformat()
     resolver = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     bytesToSend = message
     resolver.sendto(bytesToSend, (ip_resolver,port))
     bytesToSend = resolver.recvfrom(bufferSize)[0]
     msgFromResolver = bytesToArray(bytesToSend)
-    parsear_respuesta(msgFromResolver)
+
+    #Agregamos al cache
+    with open('Cache.json') as cache:
+        data = json.load(cache)
+        data[domain] = {
+                'date': actual_date,
+                'response': bytesToSend.hex(),
+
+            }
+
+    with open('Cache.json', 'w') as cache:
+        json.dump(data, cache, indent=4)
+
+    indice_respuesta = parsear_respuesta(msgFromResolver)
     
     
     print("IP:", extractIP(msgFromResolver))
     ip_response = extractIP(msgFromResolver)
 
-    return ip_response, msgFromResolver, bytesToSend
+    return ip_response, msgFromResolver, bytesToSend, indice_respuesta
 
 def parsear_respuesta(msgFromResolver):
     print("Respuesta:", msgFromResolver)
@@ -82,6 +96,7 @@ def parsear_respuesta(msgFromResolver):
     print("RDLENGTH:", msgFromResolver[limit+12+14:limit+12+16])
     rdlength = msgFromResolver[limit+12+14:limit+12+16]
     print("RDATA:", msgFromResolver[limit+12+16:limit+12+16+rdlength[1]])
+    return limit+12+4
 
 def parsear_pregunta(msgToResolver):
     print("Pregunta:", msgToResolver)
@@ -156,6 +171,28 @@ def read_config():
     )
     return data
 
+def stringToArray(bytes):
+    i=0;
+    array = []
+    while(i<len(bytes)):
+        if(bytes[i] == "\\" ):
+            array += [str(bytes[i]) + "x" + str(bytes[i+2]) + str(bytes[i+3])]
+            i += 4
+        else:
+            array += [str(bytes[i])]
+    return array
+
+def readBytes(arr):
+    i=0
+    array = []
+    while(i<len(arr)):
+        if(arr[i]=="\\" and arr[i+1]=="\\"):
+            array.append(arr[i+2]*16 + arr[i+3])
+            i += 4
+        else:
+            array.append(arr[i])
+            i += 1
+    return array
 
 def main(**options):
     config = read_config()
@@ -210,54 +247,39 @@ def main(**options):
             print("Redirigir!")
             redirect_to = config['filter']['redirected'][domain]
             print(redirect_to)
-            words = redirect_to.split('.')
-            print(parsear_pregunta(bytesToArray(message)))
-            #Crea bytes para dominio al que debe redirigirse
-            bytes_domain = []
-            for w in words:
-                bytes_domain.append(len(w))
-                for char in w:
-                    bytes_domain.append(ord(char))
-            bytes_domain.append(0)
             
-            #Modificar header para que sea una respuesta
-            """print("Header antes:", header)
-            header[2:12] = [129, 128, 0, 1, 0, 1, 0, 0, 0, 1]
+            ip_response, msgFromResolver, bytesToSend, indice_respuesta = sendToResolver(message, domain, ip_resolver)
 
 
-            print("Header despues:", header)
-            print(bytes_domain)
-            print(other)
-            print(header + bytes_domain + other)"""
+            hexage = bytesToSend.hex()
+            hexage = hexage[:15] + '01' + hexage[16:indice_respuesta]+'' #Cambiamos el numero de respuestas
 
-            bytesToSend = bytes(header + bytes_domain + other)
+            print(hexage)
 
 
-            #bytesToSend = str.encode(data[domain])
+
+
             UDPServerSocket.sendto(bytesToSend, address)
 
+        #Si esta cacheado
+        elif(domain in data):
+            respuesta_cacheada = data[domain]["response"]
+            mensaje_inicial = message.hex() 
+            respuesta_cliente =  mensaje_inicial[0:4] + respuesta_cacheada[4:] 
+            UDPServerSocket.sendto(bytes.fromhex(respuesta_cliente), address)
 
+        
         #Nueva consulta, forwardear
         else:
             #Enviamos a resolver, obtenemos ip
-            print(message)
-            print(parsear_pregunta(bytesToArray(message)))
-            ip_response, msgFromResolver, bytesToSend = sendToResolver(message, ip_resolver)
+            parsear_pregunta(bytesToArray(message))
+            ip_response, msgFromResolver, bytesToSend = sendToResolver(message, domain, ip_resolver)
+
             
             #Agregamos a logs
             actual_date = addToLogs(address[0], ip_response)
             
-            #Agregamos al cache
-            with open('Cache.json') as cache:
-                data = json.load(cache)
-                data[domain] = {
-                        'date': actual_date,
-                        'response': ip_response,
-
-                    }
-
-            with open('Cache.json', 'w') as cache:
-                json.dump(data, cache, indent=4)
+            
         
             print(domain) 
 
